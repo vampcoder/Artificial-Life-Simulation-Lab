@@ -17,9 +17,10 @@ center_circle = None
 image = None
 rect = None
 
+
 def initialize():
     global center_circle, Road1, Road2, screen, screen_size
-    screen_size = screen_width, screen_height = 300, 300
+    screen_size = screen_width, screen_height = 500, 500
     screen = pygame.display.set_mode(screen_size)
     clock = pygame.time.Clock()
     pygame.display.set_caption("Assignment 1")
@@ -51,77 +52,101 @@ class Mycircle:
     def change_velocity(self, velocity):
         self.velocity = velocity
 
+def getRandomChoice():
+    x = random.randint(0, 100)
+    if x < 20:
+        return 1
+    else:
+        return 2
+
 class environment:
     def __init__(self, velocity):
         size = 3
-        pos = [euclid.Vector2(10, 10), euclid.Vector2(180, 10), euclid.Vector2(180, 180), euclid.Vector2(10, 180)]
+        pos = [euclid.Vector2(10, 10), euclid.Vector2(200, 10), euclid.Vector2(200, 200), euclid.Vector2(10, 200)]
         dtime_ms = clock.tick(60)
-        timediff = dtime_ms / 100.0
+        timediff = dtime_ms / 500.0
+        center = euclid.Vector2(350, 150)
+        initialAngle = 0
+        radius = 70
+        angularVelocity = 0.001
+        initialPosition = center + euclid.Vector2(math.cos(initialAngle), math.sin(initialAngle))
+        self.agent3 = Mycircle(euclid.Vector2(250, 450), size, blue, width=3)
+        self.agent2 = Mycircle(initialPosition, size, red, width=3)
         i = 0
-
         self.agent1 = Mycircle(pos[0], size, green, velocity, 3)
-        self.agent2 = Mycircle(euclid.Vector2(0, 150), size, red, velocity, 3)
-        self.agent3 = Mycircle(euclid.Vector2(random.random() * 300, random.random() * 300), size, yellow, velocity, 3)
-        self.agent4 = Mycircle(euclid.Vector2(random.random() * 300, random.random() * 300), size, blue, velocity, 3)
-        pos2 = euclid.Vector2(300, 150)
-        time1 = 0
-        while True:
+        i = 0
+        flag1 = True
+        time2 = 0
+        while flag1:
+            self.agent1.move(pos[i%4])
+            time1 = 0
 
-            time = 0
             flag = True
-            initialPosition = pos[i%4]
-            while flag:
+
+            while flag and flag1:
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
-                        flag = False
+                        flag1 = False
                 finalPosition = pos[(i + 1)%4]
-                current = AgentFunction(initialPosition, velocity, time, finalPosition)
+
+                current = AgentFunction1(pos[i%4], velocity, time1, finalPosition)
                 if current.x == -1 and current.y == -1:
                     flag = False
                 else:
                     self.agent1.move(current)
+                finalPosition = pos[(i + 2) % 4]
+                current = AgentFunction2(radius, center, initialAngle, time2, angularVelocity)
+                self.agent2.move(current)
 
-                current = AgentFunction(self.agent2.position, velocity/2, timediff, pos2)
-                if current.x == -1 and current.y == -1:
-                    if pos2.x == 300:
-                        pos2 = euclid.Vector2(0, 150)
-                    else:
-                        pos2 = euclid.Vector2(300, 150)
+                current = self.agent3.position
+                if getRandomChoice() == 1:
+                    current = AgentFunction3(current, velocity, timediff, self.agent1.position)
                 else:
-                    self.agent2.move(current)
-
-                current = AgentFunction(self.agent3.position, velocity / 3, timediff, current)
-                if current.x == -1 and current.y == -1:
-                    flag = False
+                    current = AgentFunction3(current, velocity, timediff, self.agent2.position)
+                if current == euclid.Vector2(-1, -1):
+                    pass
                 else:
                     self.agent3.move(current)
 
-                current = AgentFunction(self.agent4.position, velocity / 4, timediff, current)
-                if current.x == -1 and current.y == -1:
-                    flag = False
-                else:
-                    self.agent4.move(current)
-
-                time += timediff
                 time1 += timediff
+                time2 += timediff
+
                 pygame.display.flip()
+
             i += 1
 
 def check(pos1, pos2):
     if pos1.x <= pos2.x+1 and pos1.x > pos2.x-1 and pos1.y <= pos2.y+1 and pos1.y > pos2.y-1:
         return True
 
-def AgentFunction(startPosition, velocity, time, finalPosition):
+def AgentFunction1(startPosition, velocity, time, finalPosition):
         diff = finalPosition - startPosition
         position = startPosition + velocity * time * (finalPosition - startPosition) / diff.magnitude()
+        diff = position-finalPosition
         if check(position, finalPosition):
             return euclid.Vector2(-1, -1)
         else:
             return position
 
+def AgentFunction2(radius, center, initialAngle, time, angularVelocity):
+    Angle = initialAngle + angularVelocity * time
+    position = center + radius * euclid.Vector2(math.cos(Angle), math.sin(Angle))
+    return position
+
+def AgentFunction3(currentPosition, velocity, time, finalPosition):
+    diff = finalPosition - currentPosition
+    position = currentPosition + velocity * time * (finalPosition - currentPosition) / diff.magnitude()
+    diff = finalPosition-position
+
+    if diff.magnitude() < 5:
+        return euclid.Vector2(-1, -1)
+    else:
+        return position
+
+
 def main():
     initialize()
-    env = environment(0.01)
+    env = environment(0.1)
     pygame.quit()
 
 main()
